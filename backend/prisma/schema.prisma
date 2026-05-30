@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  alias         String
+  avatar        String?
+  role          String         @default("CLIENT") // CLIENT, BARISTA, OWNER
+  progress      UserProgress?
+  activeRewards ActiveReward[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Tenant {
+  id                    String   @id @default(cuid())
+  name                  String
+  logo                  String?
+  colorPrimary          String   @default("#0a0a0a")
+  colorSecondary        String   @default("#c8a96e")
+  totalStampsRequired   Int      @default(5)
+  branches              Branch[]
+  ownerId               String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model Branch {
+  id                   String   @id @default(cuid())
+  name                 String
+  address              String?
+  latitude             Float
+  longitude            Float
+  allowedRadiusMeters  Int      @default(150)
+  tenantId             String
+  tenant               Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt            DateTime @default(now())
+}
+
+model UserProgress {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  user               User      @relation(fields: [userId], references: [id])
+  currentStamps      Int       @default(0)
+  totalRewardsEarned Int       @default(0)
+  lastStampAt        DateTime?
+}
+
+model DynamicToken {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  branchId  String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model ActiveReward {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  words     String   @unique
+  status    String   @default("PENDING") // PENDING, BURNED
+  createdAt DateTime @default(now())
+}
